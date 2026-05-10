@@ -322,7 +322,7 @@ func githubAuthorized(mntner *registry.Maintainer, author string) bool {
 		return false
 	}
 	for _, auth := range mntner.Auth {
-		if auth.Method == "github" && auth.Value == author {
+		if auth.Method == "github" && strings.EqualFold(auth.Value, author) {
 			return true
 		}
 	}
