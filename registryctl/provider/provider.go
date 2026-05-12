@@ -25,7 +25,11 @@ type Record struct {
 }
 
 func (r Record) Key() string {
-	return Key(r.Name, r.Type)
+	key := Key(r.Name, r.Type)
+	if strings.EqualFold(r.Type, "NS") {
+		return key + " " + strings.ToLower(strings.TrimSuffix(r.Content, "."))
+	}
+	return key
 }
 
 func Key(name, recordType string) string {

@@ -63,48 +63,113 @@ jobs:
           go-version-file: base/registryctl/go.mod
 
       - name: Test
+        id: test
+        continue-on-error: true
         working-directory: base/registryctl
-        run: go test ./...
+        run: |
+          set +e
+          go test ./... > "$RUNNER_TEMP/registryctl-test.log" 2>&1
+          status=$?
+          cat "$RUNNER_TEMP/registryctl-test.log"
+          exit "$status"
 
       - name: Check PR abuse prevention agreement
         id: body
+        if: steps.test.outcome == 'success'
         continue-on-error: true
         working-directory: base/registryctl
         env:
           GITHUB_PR_BODY: ${{ github.event.pull_request.body }}
-        run: go run . body-check
+        run: |
+          set +e
+          go run . body-check > "$RUNNER_TEMP/body-check.log" 2>&1
+          status=$?
+          cat "$RUNNER_TEMP/body-check.log"
+          exit "$status"
 
       - name: Check registry format and review requirement
         id: review
+        if: steps.test.outcome == 'success'
         continue-on-error: true
         working-directory: base/registryctl
         env:
           GITHUB_PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-        run: go run . review-check --base-root .. --head-root ../../head
+        run: |
+          set +e
+          go run . review-check --base-root .. --head-root ../../head > "$RUNNER_TEMP/review-check.log" 2>&1
+          status=$?
+          cat "$RUNNER_TEMP/review-check.log"
+          exit "$status"
 
       - name: Comment PR status
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
+          TEST_OUTCOME: ${{ steps.test.outcome }}
+          BODY_OUTCOME: ${{ steps.body.outcome }}
+          REVIEW_OUTCOME: ${{ steps.review.outcome }}
+          REQUIRES_REVIEW: ${{ steps.review.outputs.requires_review }}
+          AUTO_MERGE: ${{ steps.review.outputs.auto_merge }}
         run: |
-          if [ "${{ steps.body.outcome }}" != "success" ]; then
-            body="PR rejected: please complete all abuse prevention agreement checkboxes in the PR template."
-          elif [ "${{ steps.review.outcome }}" != "success" ]; then
-            body="Registry format check failed. See the workflow logs for parser or validation errors."
-          elif [ "${{ steps.review.outputs.requires_review }}" = "true" ]; then
-            body="Registry format check passed. This PR requires maintainer review because it is an initial registration or includes non-auto-mergeable changes."
-          elif [ "${{ steps.review.outputs.auto_merge }}" = "true" ]; then
-            body="Registry format check passed. This PR is eligible for auto-merge."
+          comment="$RUNNER_TEMP/pr-comment.md"
+          if [ "$TEST_OUTCOME" != "success" ]; then
+            {
+              echo "Registry tooling test failed. Maintainers need to fix the registry checker before this PR can be validated."
+              echo
+              echo '```txt'
+              cat "$RUNNER_TEMP/registryctl-test.log"
+              echo '```'
+            } > "$comment"
+          elif [ "$BODY_OUTCOME" != "success" ]; then
+            {
+              echo "PR rejected: please complete all abuse prevention agreement checkboxes in the PR template."
+              echo
+              echo '```txt'
+              cat "$RUNNER_TEMP/body-check.log"
+              echo '```'
+            } > "$comment"
+          elif [ "$REVIEW_OUTCOME" != "success" ]; then
+            {
+              echo "Registry format check failed. Parser and validation errors are shown below."
+              echo
+              echo '```txt'
+              cat "$RUNNER_TEMP/review-check.log"
+              echo '```'
+            } > "$comment"
+          elif [ "$REQUIRES_REVIEW" = "true" ]; then
+            echo "Registry format check passed. This PR requires maintainer review because it is an initial registration or includes non-auto-mergeable changes." > "$comment"
+          elif [ "$AUTO_MERGE" = "true" ]; then
+            echo "Registry format check passed. This PR is eligible for auto-merge." > "$comment"
           else
-            body="Registry format check passed."
+            echo "Registry format check passed." > "$comment"
           fi
-          gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "$body"
+          gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body-file "$comment"
+
+      - name: Update PR validation label
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TEST_OUTCOME: ${{ steps.test.outcome }}
+          BODY_OUTCOME: ${{ steps.body.outcome }}
+          REVIEW_OUTCOME: ${{ steps.review.outcome }}
+        run: |
+          label="registry-check-passed"
+          if [ "$TEST_OUTCOME" = "success" ] && [ "$BODY_OUTCOME" = "success" ] && [ "$REVIEW_OUTCOME" = "success" ]; then
+            gh label create "$label" --repo ${{ github.repository }} --color "0E8A16" --description "Registry validation passed" || true
+            gh pr edit ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --add-label "$label"
+          else
+            gh pr edit ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --remove-label "$label" || true
+          fi
 
       - name: Enable auto-merge
-        if: steps.body.outcome == 'success' && steps.review.outcome == 'success' && steps.review.outputs.auto_merge == 'true'
+        if: steps.test.outcome == 'success' && steps.body.outcome == 'success' && steps.review.outcome == 'success' && steps.review.outputs.auto_merge == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh pr merge ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --auto --squash
+
+      - name: Fail on registryctl test errors
+        if: steps.test.outcome != 'success'
+        run: exit 1
 
       - name: Fail on incomplete abuse prevention agreement
         if: steps.body.outcome != 'success'

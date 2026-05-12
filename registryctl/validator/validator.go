@@ -205,7 +205,7 @@ func validateRecords(domain *registry.Domain) Errors {
 		}
 		byName[fqdn] = append(byName[fqdn], record)
 
-		key := provider.Key(fqdn, record.Type)
+		key := recordKey(fqdn, record)
 		if existing, ok := keys[key]; ok {
 			errs = append(errs, recordError(domain, record, fmt.Sprintf("duplicate record key also defined on line %d", existing.Line)))
 		} else {
@@ -301,6 +301,14 @@ func validateNameCombinations(domain *registry.Domain, name string, records []re
 		errs = append(errs, Error{File: domain.File, Msg: "NS records cannot be combined with other record types except at zone apex"})
 	}
 	return errs
+}
+
+func recordKey(fqdn string, record registry.Record) string {
+	key := provider.Key(fqdn, record.Type)
+	if record.Type == registry.TypeNS {
+		return key + " " + registry.NormalizeName(record.Content)
+	}
+	return key
 }
 
 func validateRange(domain *registry.Domain, record registry.Record, value *int, field string, min, max int) Errors {

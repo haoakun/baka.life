@@ -129,4 +129,4 @@ Registry format check passed. This PR requires maintainer review.
 Registry format check passed. This PR is eligible for auto-merge.
 ```
 
-如果校验失败，请查看 workflow 日志。解析和校验错误会包含文件名、行号和原始行。
+如果校验失败，请查看 PR 状态评论。解析和校验错误会包含文件名、行号和原始行。

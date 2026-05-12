@@ -129,4 +129,4 @@ Registry format check passed. This PR requires maintainer review.
 Registry format check passed. This PR is eligible for auto-merge.
 ```
 
-If validation fails, check the workflow log. Parser and validation errors include filename, line number, and the original line.
+If validation fails, check the PR status comment. Parser and validation errors include filename, line number, and the original line.
