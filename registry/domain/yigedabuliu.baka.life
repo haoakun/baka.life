@@ -1,0 +1,12 @@
+domain: yigedabuliu.baka.life
+descr: Personal home lab and study project
+
+mnt-by: YIGEDABULIU-MNT
+
+@ A 1.1.1.1 proxied
+lx CNAME @ proxied
+alist CNAME @ proxied
+alistp CNAME @ proxied
+video CNAME @ proxied
+gh CNAME @ proxied
+tcp CNAME @ proxied
