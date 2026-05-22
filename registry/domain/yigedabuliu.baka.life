@@ -3,10 +3,8 @@ descr: Personal home lab and study project
 
 mnt-by: YIGEDABULIU-MNT
 
-@ A 1.1.1.1 proxied
-lx CNAME @ proxied
-alist CNAME @ proxied
-alistp CNAME @ proxied
-video CNAME @ proxied
-gh CNAME @ proxied
-tcp CNAME @ proxied
+lx CNAME e3d2252c-9895-45ef-978d-58f3ae5d8ede.cfargotunnel.com proxied
+alist CNAME e3d2252c-9895-45ef-978d-58f3ae5d8ede.cfargotunnel.com proxied
+gh CNAME e3d2252c-9895-45ef-978d-58f3ae5d8ede.cfargotunnel.com proxied
+video CNAME e3d2252c-9895-45ef-978d-58f3ae5d8ede.cfargotunnel.com proxied
+
