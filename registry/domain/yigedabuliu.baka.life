@@ -1,0 +1,10 @@
+domain: yigedabuliu.baka.life
+descr: Personal home lab and study project
+
+mnt-by: YIGEDABULIU-MNT
+
+lx CNAME e3d2252c-9895-45ef-978d-58f3ae5d8ede.cfargotunnel.com proxied
+alist CNAME e3d2252c-9895-45ef-978d-58f3ae5d8ede.cfargotunnel.com proxied
+gh CNAME e3d2252c-9895-45ef-978d-58f3ae5d8ede.cfargotunnel.com proxied
+video CNAME e3d2252c-9895-45ef-978d-58f3ae5d8ede.cfargotunnel.com proxied
+
